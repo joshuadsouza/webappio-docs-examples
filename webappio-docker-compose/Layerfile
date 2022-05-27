@@ -1,0 +1,38 @@
+FROM vm/ubuntu:18.04
+
+MEMORY 2G
+
+# Install docker
+RUN apt-get install curl apt-transport-https ca-certificates software-properties-common
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+RUN apt update
+RUN apt-cache policy docker-ce
+RUN apt install docker-ce
+
+# Install docker compose
+RUN curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+RUN chmod +x /usr/local/bin/docker-compose
+
+# Install React
+RUN curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+RUN sudo apt-get install -y nodejs
+RUN sudo npm install npm@latest -g
+
+ENV NODE_OPTIONS=--max-old-space-size=8192
+
+# Verify docker compose is installed
+RUN docker-compose --version
+
+COPY . .
+
+# Install dependencies
+WORKDIR client
+RUN npm install
+
+WORKDIR /root/server
+RUN npm install
+
+RUN docker-compose up -d
+EXPOSE WEBSITE http://localhost:5001 /api
+EXPOSE WEBSITE http://localhost:3000 /
